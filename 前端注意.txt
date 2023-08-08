@@ -1,0 +1,4 @@
+先导入VUE.JS文件
+再导入index.js文件
+再index.css文件
+index基于vue实现
