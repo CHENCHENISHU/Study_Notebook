@@ -164,3 +164,306 @@ Keyup	键盘抬起触发
 ### 文本事件
 
 input	用户输入事件
+
+
+
+## 8.14事件流
+
+从大到小捕获（父到子）
+
+Dom.addEventLisnter('触发机制'，function,是否采用捕获（true）)
+
+### 冒泡
+
+从小到大冒泡（子到父）主要使用
+
+一个元素触发事件后，依次向上调用同名事件
+
+### 阻止冒泡
+
+事件对象.stopPropagation()阻止流动传播
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .father{
+            width: 500px;
+            height: 500px;
+            background-color: pink;
+        }
+        .son{
+            width: 200px;
+            height: 200px;
+            background-color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="father">
+        <div class="son"></div>
+    </div>
+    <script>
+        const father = document.querySelector('.father')
+        const son = document.querySelector('.son')
+        father.addEventListener('click',function(){
+            alert('我是爸爸')
+        })
+        son.addEventListener('click',function(e){
+            alert('我是儿子')
+            e.stopPropagation()
+        })
+       
+        document.addEventListener('click',function(){
+            alert('我是爷爷')
+        })
+
+    </script>
+</body>
+</html>
+```
+
+阻止默认事件
+
+e.preventDefault()
+
+```javascript
+const btn = document.querySelector('button')
+        btn.addEventListener('click',function(e){
+            e.preventDefault()
+        })
+```
+
+
+
+
+
+### 事件解绑
+
+removeEventListener(事件类型，事件处理函数，获取捕获或冒泡阶段)
+
+```javascript
+const btn = document.querySelector('button')
+        btn.addEventListener('click',fn)
+        btn.removeEventListener('click',fn)
+
+        function fn(){
+            alert('点击一次')
+        }
+```
+
+ 匿名函数无法被解绑
+
+ mouseover、mouseout会触发冒泡
+
+mouseenter、mouseleave不会
+
+
+
+### 事件委托
+
+给父级注册，之后用事件属性e,e.target是类型，可以使用e.target.tagName判断是否是自己想要的类型
+
+```javascript
+  const tab = document.querySelector('.tab ul')
+        tab.addEventListener('click',function(e){
+            if(e.target.tagName==='A'){
+                document.querySelector('.tab .active').classList.remove('active')
+                e.target.classList.add('active')
+                // console.log(e.target.dataset.id);
+                // 这里要把此id转换为数字型
+                const id = +e.target.dataset.id
+                console.log(id);
+                // 排他思想，去除之前的active
+                document.querySelector('.tab-content .active').classList.remove('active')
+                
+                // console.log(document.querySelector(`.tab-content .item:nth-child(2)`));
+                document.querySelector(`.tab-content .item:nth-child(${id+1})`).classList.add('active')
+            }
+        })
+```
+
+
+
+### 页面滚动
+
+scrollTop和scrollLeft获取数字 
+
+```javascript
+// window.addEventListener('scroll',function(){
+        //     console.log('滚');
+        // })
+
+        // scrollLeft和scrollTop(属性)
+        document.querySelector('div').addEventListener('scroll',function(){
+            //被卷去的头部
+            console.log(this.scrollTop);
+        })
+
+        window.addEventListener('scroll',function(){
+            //可以被读取和修改，是数字型的
+           console.log( document.documentElement.scrollTop);
+        })
+```
+
+window.scrollTo(x,y)可以控制滚动到目标位置
+
+
+
+### 页面尺寸
+
+clientHeight
+
+clientWidth
+
+
+```javascript
+    window.addEventListener('resize',function(){
+        let w = document.documentElement.clientWidth
+        let h = document.documentElement.clientHeight
+        console.log(w,h);
+    })
+```
+
+
+
+> offsetWidth和offsetHeight
+
+内容+padding+border
+
+> offsetTop，offsetLeft
+
+带有定位的父级
+
+如果都没有以文档左上角为准
+
+
+
+浏览器的大小
+
+```javascript
+window.addEventListener('resize',function(){
+            let w = document.documentElement.clientWidth
+            let h = document.documentElement.clientHeight
+            console.log(w,h);
+        })
+```
+
+
+
+
+
+### 总结使用
+
+| 属性                      | 作用                                     | 说名                                                         |
+| ------------------------- | ---------------------------------------- | ------------------------------------------------------------ |
+| scrollLeft和scrollTop     | 被卷去的头部和左侧                       | 配合页面滚动来写，可读写的属性（可以）                       |
+| clientWidth和clientHeight | 获得元素宽度和高度                       | 不包含border，margin，滚动条，用于js获取元素大小，只读属性（不可赋值） |
+| offsetWidth和offsetHeight | 获取元素宽度和高度                       | 包含border、padding、滚动条等，只读                          |
+| offsetLeft和offsetTop     | 获取元素距离自己定位父级元素的左、上距离 | 获取元素位置时使用，只读属性                                 |
+
+
+
+> 电梯导航实例
+
+```javascript
+<script>
+
+    //第一大模块,页面滑动可以显示和隐藏
+    (function(){
+      //得到中间的焦点图
+    const entry  = document.querySelector('.xtx_entry')
+    const elevator = document.querySelector('.xtx-elevator')
+    //1.页面滚动大于300px,显示电梯导航
+    //2.页面添加滚动事件
+    window.addEventListener('scroll',function(){
+      const n = document.documentElement.scrollTop
+      // opacity指定此元素的不透明度
+      if(n>=300){
+        elevator.style.opacity=1
+      }else{
+        elevator.style.opacity=0
+      }
+      elevator.style.opacity = n >=entry.offsetTop?1:0
+    })
+
+    //点击返回页面顶部
+    const backTop = document.querySelector('#backTop')
+    backTop.addEventListener('click',function(){
+      // document.documentElement.scrollTop=0
+      window.scrollTo(0,0)
+    })
+    })();
+    
+    // 第二模块
+    (function(){
+      //2.点击页面可滑动
+      const list = document.querySelector('.xtx-elevator-list')
+      list.addEventListener('click',function(e){
+        // console.log(11);
+        if(e.target.tagName==='A'&&e.target.dataset.name){
+          //排他思想
+          const old = document.querySelector('.xtx-elevator-list .active')
+        
+          if(old) old.classList.remove('active')
+
+          e.target.classList.add('active')
+
+          //获取当前模块的大模块类名
+          const name = document.querySelector(`.xtx_goods_${e.target.dataset.name}`)
+
+          console.log(e.target.dataset.name);
+          console.log(name);
+          document.documentElement.scrollTop =name.offsetTop
+        
+        }
+      })
+
+
+      //3.页面滚动
+      window.addEventListener('scroll',function(){
+        //3.1先移除类
+        const old = document.querySelector('.xtx-elevator-list .active')
+        if(old) old.classList.remove('active')
+
+        //获取各个大盒子距离
+        const goodsNew = document.querySelector('.xtx_goods_new').offsetTop
+        const goodsPopular = document.querySelector('.xtx_goods_popular').offsetTop
+        const goodsBrand = document.querySelector('.xtx_goods_brand').offsetTop
+        const goodsTopic = document.querySelector('.xtx_goods_topic').offsetTop
+        // console.log(goodsNew,goodsBrand,goodsCategory,goodsTopic);
+        // 页面卷入的距离
+        const top = document.documentElement.scrollTop
+        if(top>=goodsNew&&top<goodsPopular){
+          document.querySelector('[data-name=new]').classList.add('active')
+        }else if(top>=goodsPopular&&top<goodsBrand){
+          document.querySelector('[data-name=popular]').classList.add('active')
+        }else if(top>=goodsBrand&&top<goodsTopic){
+          document.querySelector('[data-name=brand]').classList.add('active')
+        }else if(top>=goodsTopic){
+          document.querySelector('[data-name=topic]').classList.add('active')
+        }
+   
+      })
+      
+
+
+          
+    })()
+  </script>
+
+```
+
+获取元素位置另一种方法
+
+```javascript
+<script>
+    const div = document.querySelector('div')
+    console.log(div.getBoundingClientRect());
+</script>
+```
+
