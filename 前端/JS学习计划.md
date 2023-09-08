@@ -279,6 +279,7 @@ mouseenter、mouseleave不会
                 const id = +e.target.dataset.id
                 console.log(id);
                 // 排他思想，去除之前的active
+                //toggle事件可以直接切换class
                 document.querySelector('.tab-content .active').classList.remove('active')
                 
                 // console.log(document.querySelector(`.tab-content .item:nth-child(2)`));
