@@ -126,3 +126,30 @@ int main(int argc,char *argv[])
 | QString(字符串类)     | Unicode字符串，不同于C字符串，（双引号括起来的每个字符8bit，），此字符串每个占16bit |
 |                       |                                                              |
 
+
+
+信号和槽
+
+```c++
+QMetaObject::Connection connect(const QObject *, const char *,const QObject *, const char *,Qt::ConnectionType);
+
+QMetaObject::Connection connect(const QObject *, const QMetaMethod &,const QObject *, const QMetaMethod &,Qt::ConnectionType);
+
+QMetaObject::Connection connect(const QObject *, const char *,const char *,Qt::ConnectionType) const;
+
+QMetaObject::Connection connect(const QObject *, PointerToMemberFunction, const QObject *, PointerToMemberFunction,Qt::ConnectionType)
+
+QMetaObject::Connection connect(const QObject *, PointerToMemberFunction,Functor);
+```
+
+
+
+```c++
+connect(sender,signal,receiver, slot);
+//sender是发出信号的对象
+//signal是发送对象发出的信号
+//receiver是接收信号的对象
+//slot是接收对象在接收到信号后需调用的函数
+```
+
+![image-20230919200243241](C:\Users\30992\AppData\Roaming\Typora\typora-user-images\image-20230919200243241.png)
