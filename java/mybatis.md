@@ -1,610 +1,505 @@
-# MyBatis环境搭建
+[mybatis – MyBatis 3 | 入门](https://mybatis.org/mybatis-3/zh/getting-started.html)
 
-pom.xml中引入MyBatis核心依赖
+首先是这个框架
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
+# Mybatis使用
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"     
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation=
-         "http://maven.apache.org/POM/4.0.0 
-          http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-    <modelVersion>4.0.0</modelVersion>
 
-    <!--项目配置-->
-    <groupId>com.qf</groupId>
-    <artifactId>hello-mybatis</artifactId>
-    <version>1.0-SNAPSHOT</version>
+## 1.入门使用
 
-    <!--依赖-->
-    <dependencies>
-        <!--MyBatis核心依赖-->
-        <dependency>
-            <groupId>org.mybatis</groupId>
-            <artifactId>mybatis</artifactId>
-            <version>3.4.6</version>
-        </dependency>
-
-        <!--MySql驱动依赖-->
-      <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.21</version>
-        </dependency>
-      </dependencies>
-</project>
-```
-
-## 创建MyBatis配置文件
-
-> 在resources目录创建mybatis-config.xml
+1.导入jar包
 
 ```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
-    "http://mybatis.org/dtd/mybatis-3-config.dtd">
-
-<!--MyBatis配置-->
-<configuration>
-    <!--JDBC环境配置、选中默认环境-->
-    <environments default="MySqlDB">
-        <!--MySql数据库环境配置-->
-        <environment id="MySqlDB">
-            <!--事务管理-->
-            <transactionManager type="JDBC"/>
-            <!--连接池-->
-       <dataSource type="org.apache.ibatis.datasource.pooled.PooledDataSourceFactory">
-                <property name="driver" value="com.mysql.cj.jdbc.Driver"/>
-                <!-- &转义& -->
-                <property name="url" value="jdbc:mysql://localhost:3306/ssm?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true"/>
-                <property name="username" value="root"/>
-                <property name="password" value="123456"/>
-            </dataSource>
-        </environment>
-    </environments>
-
-    <!--Mapper注册-->
-    <mappers>
-        <!--注册Mapper文件的所在位置-->
-        <mapper resource="xxxMapper.xml"/>
-    </mappers>
-</configuration>
-```
-
-注意：mapper.xml默认建议存放在resources中,路径不能以/开头
-
-
-
-## MyBatis开发步骤
-
-### 建表
-
-```sql
-create table t_users(
-  id int primary key auto_increment,
-  name varchar(50),
-  password varchar(50),
-  sex varchar(1),
-  birthday datetime,
-  registTime datetime
-)default charset = utf8;
-```
-
-### 定义实体类
-
-```java
-public class User {
-    private Integer id;
-    private String name;
-    private String password;
-    private String sex;
-      private Date birthday;
-      private Date registTime;
-
-    //无参构造（必备构造二选一）
-    public User() {}
-
-    //全参构造（必备构造二选一）
-    public User(Integer id, String name, String password, String sex, Date birthday, Date registTime) {
-        this.id = id;
-        this.name = name;
-        this.password = password;
-        this.sex = sex;
-          this.birthday = birthday;
-          this.registTime = registTime;
-    }
-
-    //Getters And Setters
-}
-```
-
-### 定义Mapper接口
-
-> 创建Mapper包，然后创建UserMapper接口文件，并添加所需方法
-
-```java
-public interface UserDao {
-    public User selectUserById(Integer id);
-}
-```
-
-### 编写Mapper.xml
-
-> 在resources目录中创建Mapper.xml文件
-
-```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
-<!--namespace = 所需实现的接口全限定名-->
-<mapper namespace="com.qf.mybatis.mapper.UserDao">
-    <!--id = 所需重写的接口抽象方法，resultType = 查询后所需返回的对象类型-->
-    <select id="selectUserById" resultType="com.qf.mybatis.part1.basic.User">
-        <!--#{arg0} = 方法的第一个形参-->
-          SELECT * FROM t_users WHERE id = #{arg0}
-    </select>
-</mapper>
-```
-
-### 注册Mapper
-
-> 将Mapper.xml注册到mybatis-config.xml中
-
-```xml
-<!--Mapper文件注册位置-->
-<mappers>
-    <!--注册Mapper文件-->
-    <mapper resource="mapper/UserDaoMapper.xml"/>
-</mappers>
-```
-
-### 测试
-
-```java
-public class HelloMyBatis {
-
-    @Test
-    public void test1() throws IOException {
-        //1.获得读取MyBatis配置文件的流对象
-        InputStream is = Resources.getResourceAsStream("mybatis-config.xml");
-
-        //2.构建SqlSession连接对象的工厂
-        SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(is);
-
-        //3.通过工厂获得连接对象
-        SqlSession sqlSession = factory.openSession();
-
-        //4.通过连接对象获得接口实现类对象  
-        UserDao userDao = sqlSession.getMapper(UserDao.class);
-
-        //5.调用接口中的方法
-        System.out.println(userDao.selectUserById(1));
-    }
-}
-```
-
-## 细节补充
-
-### 解决mapper.xml存放在resources以外路径中的读取问题
-
-> 在pom.xml文件最后追加< build >标签，以便可以将xml文件复制到classes中，并在程序运行时正确读取。
-
-```xml
-```xml
-<build>
-        <!-- 如果不添加此节点src/main/java目录下的所有配置文件都会被漏掉。 -->
-        <resources>
-            <resource>
-                <directory>src/main/java</directory>
-                <includes>
-                    <include>**/*.xml</include>
-                </includes>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-                <includes>
-                    <include>**/*.xml</include>
-                    <include>**/*.properties</include>
-                    <include>**/*.ini</include>
-                </includes>
-            </resource>
-        </resources>
-    </build>
-```
-
-### properties配置文件
-
-> 对于mybatis-config.xml的核心配置中，如果存在需要频繁改动的数据内容，可以提取到properties中。
-
-```
-#jdbc.properties
-jdbc.driver=com.mysql.jdbc.Driver
-jdbc.url=jdbc:mysql://localhost:3306/example?useUnicode=true&characterEncpding=utf8
-jdbc.username=root
-jdbc.password=123456
-```
-
-> 修改mybatis-config.xml。
-
-```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-config.dtd">
-
-<configuration>
-    <!--添加properties配置文件路径(外部配置、动态替换)-->
-    <properties resource="jdbc.properties" />
-
-    <environments default="MySqlDB">
-        <environment id="MySqlDB">
-            <transactionManager type="JDBC"/>
-            <dataSource type="POOLED">
-                <!--使用$ + 占位符-->
-                <property name="driver" value="${driver}"/>
-                <property name="url" value="${url}"/>
-                <property name="username" value="${username}"/>
-                <property name="password" value="${password}"/>
-            </dataSource>
-        </environment>
-    </environments>
-
-    <mappers>
-        <mapper resource="mapper/UserDaoMapper.xml" />
-    </mappers>
-</configuration>
-```
-
-### 类型别名（了解）
-
-> 为实体类定义别名，提高书写效率。
-
-```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-config.dtd">
-
-<configuration>
-    <properties ... />
-
-    <!--定义别名二选一-->
-    <typeAliases>
-        <!--定义类的别名-->
-        <typeAlias type="com.qf.mybatis.mapper.User" alias="user" />
-
-        <!--自动扫描包，将原类名作为别名-->
-        <package name="com.qf.mybatis.part1.basic" />
-    </typeAliases>
-
-      ...
-</configuration>
-```
-
-### 创建log4j配置文件
-
-> 添加log4j依赖
-
-```xml
-<!-- log4j日志依赖 https://mvnrepository.com/artifact/log4j/log4j -->
 <dependency>
-        <groupId>log4j</groupId>
-        <artifactId>log4j</artifactId>
-        <version>1.2.17</version>
+      <groupId>org.mybatis</groupId>
+      <artifactId>mybatis</artifactId>
+      <version>3.5.5</version>
 </dependency>
 ```
 
-> 创建并配置log4j.properties
-
-```
-```xml
-# Global logging configuration
-log4j.rootLogger=DEBUG, stdout
-# MyBatis logging configuration...
-log4j.logger.org.mybatis.example.BlogMapper=TRACE
-# Console output...
-log4j.appender.stdout=org.apache.log4j.ConsoleAppender
-log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
-log4j.appender.stdout.layout.ConversionPattern=%5p [%t] - %m%n
-```
-
-```
-
-| 级别        | 描述                              |
-| --------- | ------------------------------- |
-| ALL LEVEL | 打开所有所有日志记录开关；最低等级的，用于打开所有日志记录   |
-| DEBUG     | 输入调试信息；指出细粒度信息事件对调试应用程序是非常有帮助的  |
-| INFO      | 输出提示信息；消息在粗粒度级别上突出强调应用程序的运行过程   |
-| WARN      | 输出警告信息；表明会出现潜在错误的情形             |
-| ERROR     | 输出错误信息；指出虽然发生错误事件，但仍然不影响系统的继续运行 |
-| FATAL     | 输出致命错误；指出每个严重错误事件将导致应用程序的退出。    |
-| OFF LEVEL | 关闭所有日志记录开关；最高等级的，用于关闭所有日志记录     |
-
-## MyBatis的CRUD操作
-
-### 查询
-
->  标签：< select id="" resultType="" >
-
-#### 序号参数绑定
-
-```java
-public interface UserDao {
-        //使用原生参数绑定
-    public User selectUserByIdAndPwd(Integer id , String pwd);
-}
-```
+2.配置xml文件
 
 ```xml
-<select id="selectUserByIdAndPwd" resultType="user">
-    SELECT * FROM t_users
-    WHERE id = #{arg0} AND password = #{arg1} <!--arg0 arg1 arg2 ...-->
-</select>
+<!--mybatis-config.xml-->
 
-<select id="selectUserByIdAndPwd" resultType="user">
-    SELECT * FROM t_users
-    WHERE id = #{param1} AND password = #{param2} <!--param1 param2 param3 ...-->
-</select>
-
-<select id="selectUserByIdAndPwd" resultType="user">
-    SELECT * FROM t_users
-    WHERE id = #{id} AND password = #{pwd} <!--param1 param2 param3 ...-->
-</select>
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <environments default="development">
+        <environment id="development">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver" value="com.mysql.cj.jdbc.Driver"/>
+                <property name="url" value="jdbc:mysql://localhost:3306/springdemo"/>
+                <property name="username" value="root"/>
+                <property name="password" value="root"/>
+            </dataSource>
+        </environment>
+    </environments>
+    
+    <mappers>
+<!--        加载sql映射文件-->
+        <mapper resource="UserMapper.xml"/>
+</mappers>
+</configuration>
 ```
 
-#### 注解参数绑定【推荐】
-
-```java
-public interface UserDao {
-    //使用MyBatis提供的@Param进行参数绑定
-    public User selectUserByIdAndPwd(@Param("id") Integer id , @Param("pwd") String pwd);
-}
-```
+3.创建对应的mapper文件
 
 ```xml
-<select id="selectUserByIdAndPwd" resultType="user">
-    SELECT * FROM t_users
-    WHERE id = #{id} AND password = #{pwd} <!-- 使用注解值 @Param("pwd") -->
-</select>
-```
+<!--UserMapper.xml-->
 
-#### Map参数绑定(了解)
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-```java
-public interface UserDao {
-    //添加Map进行参数绑定
-		public User selectUserByIdAndPwd_map(Map values);
-}
-```
-
-```java
-Map values = new HashMap(); //测试类创建Map
-values.put("myId",1); //自定义key，绑定参数
-values.put("myPwd","123456");
-User user = userDao.selectUserByIdAndPwd_map(values);
-```
-
-```xml
-<select id="selectUserByIdAndPwd_map" resultType="user">
-    SELECT * FROM t_users 
-  	WHERE id = #{myId} AND password = #{myPwd} <!-- 通过key获得value -->
-</select>
-```
-
-#### 对象参数绑定(重点)
-
-```java
-public interface UserDao {
-    //使用对象属性进行参数绑定
-    public User selectUserByUserInfo(User user);
-}
-```
-
-```xml
-<select id="selectUserByUserInfo" resultType="user">
-    SELECT * FROM t_users
-    WHERE id = #{id} AND password = #{password} <!-- #{id}取User对象的id属性值、#{password}同理 -->
-</select>
-```
-
-#### 模糊查询
-
-```java
-public interface UserDao {
-    public List<User> selectUsersByKeyword(@Param("keyword") String keyword);
-}
-```
-
-```xml
-<mapper namespace="com.qf.mybatis.part1.different.UserDao">
-    <select id="selectUsersByKeyword" resultType="user">
-        SELECT * FROM t_users 
-  		WHERE name LIKE concat('%',#{keyword},'%') <!-- 拼接'%' -->
+<!--命名空间-->
+<mapper namespace="org.mybatis.example.BlogMapper">
+    <select id="selectAll" resultType="com.cx.pojo.User">
+        select * from tb_user
     </select>
 </mapper>
 ```
 
-#### 删除
+4.创建映射文件
 
-> 标签：< delete id="" parameterType="" >
+在上面的mybatis-config.xml文件中加入
 
 ```xml
-<delete id="deleteUser" parameterType="int">
-    DELETE FROM t_users
-    WHERE id = #{id} <!--只有一个参数时，#{任意书写}-->
+<mappers>
+<!--        加载sql映射文件-->
+        <mapper resource="UserMapper.xml"/>
+</mappers>
+```
+
+5.测试
+
+```java
+  		//获取核心配置
+		String resource = "mybatis-config.xml";
+        InputStream inputStream = Resources.getResourceAsStream(resource);
+        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+		
+		//获取执行sqlsession
+        SqlSession session = sqlSessionFactory.openSession();
+		
+		//执行查询
+        List<User> userList = session.selectList("test.selectAll");
+        System.out.println(userList);
+		//关闭资源
+        session.close();
+
+//假如出现报错，就看看是不是时区问题，在
+
+```
+
+[IDEA报错：java.sql.SQLException: The server time zone value ‘�й���׼ʱ��‘ is unrecognized or represents.._idea the server time zone value ‘ й-CSDN博客](https://blog.csdn.net/YyjYsj/article/details/111192410)
+
+
+
+## 2.代理开发
+
+使用接口来代理mapper，这样每次使用mapper时有提示
+
+1. 首先创建一个接口，要和xml的mapper名字相同
+
+2. ![image-20231005174715538](./../picture/image-20231005174715538.png)
+
+   这里注意resources的包创建时要用“/”创建
+
+   ```
+   com/cx/mapper
+   ```
+
+3. 修改xml文件的命名空间
+
+   ```xml
+   <!--修改成接口位置-->
+   <mapper namespace="com.cx.mapper.UserMapper">
+       <select id="selectAll" resultType="com.cx.pojo.User">
+           select * from tb_user;
+       </select>
+   </mapper>
+   ```
+
+   修改config的文件
+
+   ```xml
+   <mapper resource="com/cx/mapper/UserMapper.xml"/>
+   <!--修改成包扫描-->
+   <package name="com.cx.mapper"/>
+   ```
+
+4. 接口添加方法
+
+   ```java
+   //方法名要改成select的id
+   public interface UserMapper {
+       List<User> selectAll();
+   }
+   ```
+
+main方法修改
+
+```java
+String resource = "mybatis-config.xml";
+        InputStream inputStream = Resources.getResourceAsStream(resource);
+        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+
+        SqlSession session = sqlSessionFactory.openSession();
+
+		//修改成mapper映射
+        UserMapper um = session.getMapper(UserMapper.class);
+        List<User> userList = um.selectAll();
+        System.out.println(userList);
+
+        session.close();
+```
+
+
+
+## 3.配置文件
+
+![image-20231005205214803](./../picture/image-20231005205214803.png)
+
+要按照顺序配置
+
+### 1.环境配置
+
+environments：配置数据库连接环境信息，可以配置多个environment，通过default属性切换不同的environment
+
+### 2.类型别名
+
+加了类型别名指定的包，里面的类可以用小写，不需要每个字母大小写都对的上
+
+```xml
+<typeAliases>
+        <package name="com.cx.pojo"/>
+    </typeAliases>
+```
+
+### 3.将数据库列名对应实体类
+
+```xml
+<resultMap id="BrandResultMap" type="Brand">
+    <result property="brandName" column="brand_name" />
+    <result property="companyName" column="company_name"/>
+</resultMap>
+```
+
+在对应mapper上的resultType要写成resultMap
+
+```xml
+resultMap="BrandResultMap"
+```
+
+## 4.增删改查
+
+### 1.条件查询的mapper
+
+```xml
+<mapper namespace="com.cx.mapper.BrandMapper">
+    <resultMap id="BrandResultMap" type="Brand">
+        <result property="brandName" column="brand_name" />
+        <result property="companyName" column="company_name"/>
+    </resultMap>
+    <select id="selectById" parameterType="int" resultMap="BrandResultMap">
+        select * from tb_brand where id = #{id}
+    </select>
+</mapper>
+```
+
+参数占位符：
+
+​	1.#{}：会将其替换成？，为了防止sql注入
+
+​	2.${}：拼sql，会存在sql注入问题
+
+​	3.使用时机：
+
+​		*参数传递时：#{}
+
+​		*表名或列名不固定时:${}会存在Sql注入的问题
+
+参数类型：parameterType：可以省略
+
+特殊字符处理：
+
+​	1.转义字符
+
+​	2.CDATA区
+
+### 2.多条件查询的mapper
+
+```xml
+<select id="selectByCondition" resultMap="BrandResultMap">
+    select *
+    from tb_brand
+    where
+        status = #{status}
+        and company_name like #{companyName}
+        and brand_name like #{brandName}
+</select>
+```
+
+```java
+
+ int status = 1;
+        String companyName = "华为";
+        String brandName = "华为";
+        companyName = "%"+companyName+"%";
+        brandName = "%"+brandName +"%";
+//        Map map = new HashMap();
+//        map.put("status",status);
+//        map.put("companyName",companyName);
+//        map.put("brandName",brandName);
+
+
+//散装参数，sql占位符Param
+List<Brand> selectByCondition(@Param("status")int status,@Param("companyName")String companyName,@Param("brandName")String brandName);
+
+//封装类，sql参数名和类名对应上
+List<Brand> selectByCondition(Brand brand);
+
+//map集合传参，保证sql参数名和map键对应上
+List<Brand> selectByCondition(Map map);
+
+```
+
+模糊查询中，要在main中加”%“占位符
+
+```java
+List<Brand> brand = brandMapper.selectByCondition(1,null,null);
+在测试类中假如有未输入的情况，会出现[]
+    对mapper进行如下修改
+```
+
+```xml
+<select id="selectByCondition" resultMap="BrandResultMap">
+    select *
+    from tb_brand
+    <where>
+    <if test="status != null">
+        and status = #{status}
+    </if>
+    <if test="companyName != null and companyName != '' ">
+        and company_name like #{companyName}
+    </if>
+    <if test="brandName != null and brandName != '' ">
+        and brand_name like #{brandName}
+    </if>
+    </where>
+</select>
+```
+
+### 3.单条件查询
+
+要考虑一下没有输入的情况
+
+```xml
+<!--choose when相当于switch case ，otherwise就是default，无输入时就会全查出来，也可以用where动态查询，会自动检测有无输入的情况-->
+
+<select id="selectByConditionSingle" resultMap="BrandResultMap">
+    select *
+    from tb_brand
+    where
+    <choose>
+        <when test="status != null">
+            status = #{status}
+        </when>
+        <when test="companyName != null and companyName != '' ">
+            company_name like #{companyName}
+        </when>
+        <when test="brandName != null and brandName != '' ">
+            brand_name like #{brandName}
+        </when>
+        <otherwise>
+            1=1
+        </otherwise>
+    </choose>
+
+</select>
+```
+
+使用where动态查
+
+```xml
+<select id="selectByConditionSingle" resultMap="BrandResultMap">
+    select *
+    from tb_brand
+    <where>
+    <choose>
+        <when test="status != null">
+            status = #{status}
+        </when>
+        <when test="companyName != null and companyName != '' ">
+            company_name like #{companyName}
+        </when>
+        <when test="brandName != null and brandName != '' ">
+            brand_name like #{brandName}
+        </when>
+      </choose>
+        </where>
+</select>
+```
+
+### 4.添加
+
+
+
+```xml
+<insert id="add" useGeneratedKeys="true" keyProperty="id">
+    insert into tb_brand(brand_name,company_name,ordered,description,status)
+    values (#{brandName},#{companyName},#{ordered},#{description},#{status})
+</insert>
+```
+
+在使用useGenerateKeys="true"，keyProperty = “id”可以获取插入的类id，自动递增时
+
+```java
+int id = brand.getId();
+```
+
+### 5.修改
+
+使用if标签可以动态修改数据库，修改部分字段
+
+```xml
+<update id="updateById">
+    update tb_brand
+    <set>
+        <if test="brandName != null and brandName != '' ">
+            brand_name = #{brandName},
+        </if>
+        <if test="companyName != null and companyName != ''">
+            company_name = #{companyName},
+        </if>
+        <if test="ordered != null">
+            ordered= #{ordered},
+        </if>
+        <if test="description != null">
+            description = #{description},
+        </if>
+        <if test="status != null">
+            status = #{status}
+        </if>
+    </set>
+    where id = #{id}
+</update>
+```
+
+### 6.删除
+
+删除单个
+
+```xml
+<delete id="deleteById">
+    delete from tb_brand where id = #{id}
 </delete>
 ```
 
-#### 添加
-
-> 标签：< insert id="" parameterType="" >
+删除多个
 
 ```xml
-<!--手动主键-->
-<insert id="insertUser" parameterType="user">
-    INSERT INTO t_users VALUES(#{id},#{name},#{password},#{sex},#{birthday},NULL);
-</insert>
-
-<!--自动主键-->
-<insert id="insertUser" parameterType="user">
-	<!-- 自动增长主键，以下两种方案均可 -->
-    INSERT INTO t_users VALUES(#{id},#{name},#{password},#{sex},#{birthday},NULL);
-	INSERT INTO t_users VALUES(NULL,#{name},#{password},#{sex},#{birthday},NULL);
-</insert>
+<delete id="deleteByIds">
+    delete from tb_brand where id
+    in(
+        <foreach collection="ids" item="id" separator=",">
+            #{id}
+        </foreach>
+    );
+</delete>
 ```
-
-### 主键回填
-
-> 标签：< selectKey id="" parameterType="" order="AFTER|BEFORE">
-
-#### 通过last_insert_id()查询主键
 
 ```java
-create table t_product(
-  id int primary key auto_increment,
-  name varchar(50)
-)default charset = utf8;
+void deleteByIds(@Param("ids") int[] ids);
 ```
 
-```sql
-class Product{
-    private Integer id;
-    private String name;
-    //set+get ...
-}
+## 5.深入mybatis
+
+### mybatis核心对象
+
+SqlSession负责执行sql语句，是一个java程序与数据库之间一次会话
+
+SqlSessionFactoryBuilder
+
+SqlSessionFactory
+
+SqlSession
+
+```java
+		String resource = "mybatis-config.xml";
+        InputStream inputStream = Resources.getResourceAsStream(resource);
+        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+        SqlSession session = sqlSessionFactory.openSession();
 ```
+
+## 6.mybatis集成日志文件
+
+在mybatis-config.xml中settings开启
+
+```java
+<!--mybatis自己在框架中实现的日志，下面代码用于开启-->
+    <!--这是默认，不用引入jar包-->
+<settings>
+        <setting name="logImpl" value="STDOUT_LOGGING"/>
+    </settings>
+```
+
+
+
+引入logback依赖
+
+1.引入Logback依赖
 
 ```xml
-<mapper namespace="com.qf.mybatis.part1.basic.ProductDao">
-    <insert id="insertProduct" parameterType="product">
-        <selectKey keyProperty="id" resultType="int" order="AFTER"> <!-- 插入之后 -->
-            SELECT LAST_INSERT_ID() <!-- 适用于整数类型自增主键 -->
-        </selectKey>
-
-        INSERT INTO t_product(id,name) VALUES(#{id},#{name})
-    </insert>
-</mapper>
+<dependency>
+  <groupId>ch.qos.logback</groupId>
+  <artifactId>logback-classic</artifactId>
+  <version>1.4.5</version>
+  <scope>test</scope>
+</dependency>
 ```
 
-## 通过uuid()查询主键
+2.引入Logback的xml配置文件
 
-```sql
-create table t_order(
-  id varchar(32) primary key, # 字符型主键
-  name varchar(50)
-)default charset = utf8;
-```
+7.整合成一个工具类
+
+
+
+
+
+
+
+## 注意点：
+
+接口每次设置多个参数传进来时，要加@Param（“对应实体类名称”）（就是sql属性占位符）
+
+
+
+mybatis不会自动提交，需要在main中
+
+
 
 ```java
-class Order{
-    private String id;
-    private String name;
-    //set+get ...
-}
+SqlSession session = sqlSessionFactory.openSession(true);//在这里填上true
+
+//或者在下面直接
+session.commit();
 ```
 
-```xml
-<mapper namespace="com.qf.mybatis.part1.basic.OrderDao">
-    <insert id="insertOrder" parameterType="order">
-        <selectKey keyProperty="id" resultType="String" order="BEFORE"><!-- 插入之前 -->
-            SELECT REPLACE(UUID(),'-','') <!-- 适用于字符类型主键 -->
-        </selectKey>
+![image-20231009200715994](./../picture/image-20231009200715994.png)
 
-        INSERT INTO t_order(id,name) VALUES(#{id},#{name})
-    </insert>
-</mapper>
-```
+## 注解
 
-# MyBatis工具类
+把sql语句写在接口方法上
 
-## 封装工具类
-
-- Resource：用于获得读取配置文件的IO对象，耗费资源，建议通过IO一次性读取所有所需要的数据。
-
-- SqlSessionFactory：SqlSession工厂类，内存占用多，耗费资源，建议每个应用只创建一个对象。
-* SqlSession：相当于Connection，可控制事务，应为线程私有，不被多线程共享。
-* 将获得连接、关闭连接、提交事务、回滚事务、获得接口实现类等方法进行封装。
+简单sql用注解，复杂sql用xml
 
 ```java
-public class MyBatisUtils {
-
-  	//获得SqlSession工厂
-    private static SqlSessionFactory factory;
-
-  	//创建ThreadLocal绑定当前线程中的SqlSession对象
-    private static final ThreadLocal<SqlSession> tl = new ThreadLocal<SqlSession>();
-
-    static {
-        try {
-            InputStream is = Resources.getResourceAsStream("mybatis-config.xml");
-            factory = new SqlSessionFactoryBuilder().build(is);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    //获得连接（从tl中获得当前线程SqlSession）
-    private static SqlSession openSession(){
-        SqlSession session = tl.get();
-        if(session == null){
-            session = factory.openSession();
-            tl.set(session);
-        }
-        return session;
-    }
-
-    //释放连接（释放当前线程中的SqlSession）
-    private static void closeSession(){
-        SqlSession session = tl.get();
-        session.close();
-        tl.remove();
-    }
-
-    //提交事务（提交当前线程中的SqlSession所管理的事务）
-    public static void commit(){
-        SqlSession session = openSession();
-        session.commit();
-        closeSession();
-    }
-
-    //回滚事务（回滚当前线程中的SqlSession所管理的事务）
-    public static void rollback(){
-        SqlSession session = openSession();
-        session.rollback();
-        closeSession();
-    }
-
-    //获得接口实现类对象
-    public static <T extends Object> T getMapper(Class<T> clazz){
-        SqlSession session = openSession();
-        return session.getMapper(clazz);
-    }
-}
+@Select("select * from tb_Brand where id = #{id}")
 ```
-
-# 测试工具类
-
-> 调用MyBatisUtils中的封装方法。
-
-```java
-@Test
-    public void testUtils() {
-        try {
-            UserMapper userMapper = MyBatisUtils.getMapper(UserMapper.class);
-            userMapper.deleteUser(15);
-            MyBatisUtils.commit();
-        } catch (Exception e) {
-            MyBatisUtils.rollback();
-            e.printStackTrace();
-        }
-    }
-}
-```
-```
-
-# ORM映射
-
-## MyBatis自动ORM失效
-
-
